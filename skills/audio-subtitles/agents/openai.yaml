@@ -1,0 +1,4 @@
+interface:
+  display_name: "Audio Subtitles"
+  short_description: "Create timed lyrics from audio or video."
+  default_prompt: "Generate SRT, VTT, LRC, and text from this audio or video file using the audio-subtitles workflow."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube MP3"
+  short_description: "Download YouTube links as MP3 audio with yt-dlp."
+  default_prompt: "Download this YouTube URL as an MP3 using the youtube-mp3 workflow."
