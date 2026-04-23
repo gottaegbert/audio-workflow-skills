@@ -28,6 +28,8 @@ setup-audio-subtitles
 setup-audio-separator
 ```
 
+`setup-audio-separator` installs PyTorch and related separation packages, so it is much larger than the transcription-only setup. Skip it unless you need `audio-subtitles --separate`.
+
 ## YouTube to MP3
 
 ```bash
