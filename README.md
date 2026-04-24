@@ -6,10 +6,10 @@ VocalFlow Studio is a desktop and CLI toolkit for singing practice, video subtit
 
 ## Download
 
-Latest release: [v0.1.0](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.0)
+Latest release: [v0.1.1](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.1)
 
-- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-mac-arm64.dmg)
-- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-win-x64.exe)
+- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-mac-arm64.dmg)
+- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-win-x64.exe)
 
 The desktop app is currently a CLI shell. Full media processing still requires the runtime setup below.
 
@@ -169,8 +169,8 @@ media-mp3 --browser chrome "https://www.bilibili.com/video/BV..."
 Maintainers can push a version tag to let GitHub Actions build desktop installers and upload them to a GitHub Release:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 Release assets:

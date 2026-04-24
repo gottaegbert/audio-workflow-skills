@@ -6,10 +6,10 @@ VocalFlow Studio 是一个面向唱歌练习、视频字幕和人声分离的桌
 
 ## 下载
 
-最新版本：[v0.1.0](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.0)
+最新版本：[v0.1.1](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.1)
 
-- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-mac-arm64.dmg)
-- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-win-x64.exe)
+- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-mac-arm64.dmg)
+- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-win-x64.exe)
 
 当前桌面 app 仍是 CLI 外壳。完整媒体处理还需要安装下面的运行依赖。
 
@@ -169,8 +169,8 @@ media-mp3 --browser chrome "https://www.bilibili.com/video/BV..."
 维护者推送版本 tag 后，GitHub Actions 会自动构建桌面安装包并上传到 GitHub Release：
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 Release 产物：
