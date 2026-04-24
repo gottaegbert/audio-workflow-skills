@@ -34,11 +34,13 @@ Start the app:
 pnpm dev
 ```
 
-The app expects `audio-subtitles` to be on PATH. On macOS, the main process also checks:
+The packaged app includes the `audio-subtitles` script. During local development, the main process also prefers a user-installed CLI at:
 
 ```text
 ~/.local/bin/audio-subtitles
 ```
+
+Full media processing still needs runtime tools on the user's machine: Python 3, `ffmpeg`, `yt-dlp`, and optional local transcription/separation dependencies.
 
 ## Current Scope
 
@@ -64,7 +66,7 @@ The workflow uploads:
 - macOS `.dmg`
 - Windows `.exe`
 
-The packaged app still expects the `audio-subtitles` CLI and runtime dependencies to be installed on the user's machine.
+The packaged app includes the `audio-subtitles` script, but runtime dependencies still need to be installed on the user's machine.
 
 ## Not Included Yet
 

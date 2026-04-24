@@ -1,6 +1,6 @@
 {
   "name": "@vocalflow/desktop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Desktop app for generating vocal stems, karaoke assets, and subtitles with audio-subtitles.",
   "private": true,
   "type": "module",
@@ -28,6 +28,15 @@
     "files": [
       "dist/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../skills/audio-subtitles/scripts",
+        "to": "audio-subtitles/scripts",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "mac": {
       "category": "public.app-category.music",

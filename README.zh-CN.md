@@ -6,12 +6,12 @@ VocalFlow Studio 是一个面向唱歌练习、视频字幕和人声分离的桌
 
 ## 下载
 
-最新版本：[v0.1.1](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.1)
+最新版本：[v0.1.2](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.2)
 
-- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-mac-arm64.dmg)
-- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-win-x64.exe)
+- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-mac-arm64.dmg)
+- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-win-x64.exe)
 
-当前桌面 app 仍是 CLI 外壳。完整媒体处理还需要安装下面的运行依赖。
+当前桌面 app 已内置 `audio-subtitles` 脚本，但完整媒体处理仍需要安装下面的运行依赖：Python 3、`ffmpeg`、`yt-dlp`，以及可选的本地识别/人声分离依赖。
 
 ## 使用场景
 
@@ -120,7 +120,7 @@ pnpm install
 pnpm dev
 ```
 
-桌面 app 当前是 CLI 外壳，核心媒体处理仍来自 `audio-subtitles`。它支持：
+桌面 app 已内置 `audio-subtitles` 脚本，媒体处理仍依赖上面的运行工具。它支持：
 
 - 粘贴 YouTube / Bilibili URL。
 - 选择本地音频、视频或 UVR 输出文件夹。
@@ -169,8 +169,8 @@ media-mp3 --browser chrome "https://www.bilibili.com/video/BV..."
 维护者推送版本 tag 后，GitHub Actions 会自动构建桌面安装包并上传到 GitHub Release：
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 Release 产物：
@@ -178,7 +178,7 @@ Release 产物：
 - macOS: `.dmg`
 - Windows: `.exe`
 
-注意：当前桌面 app 是 CLI 外壳。用户安装 DMG/EXE 后，完整媒体处理仍需要本机安装 `audio-subtitles`、`ffmpeg`、`yt-dlp`，以及可选的本地转写/人声分离依赖。
+注意：桌面 app 已内置 `audio-subtitles` 脚本。用户安装 DMG/EXE 后，完整媒体处理仍需要本机安装 Python 3、`ffmpeg`、`yt-dlp`，以及可选的本地转写/人声分离依赖。
 
 ## 输出文件
 

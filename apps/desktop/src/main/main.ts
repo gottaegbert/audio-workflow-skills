@@ -10,9 +10,39 @@ import type { CommandPreview, JobOptions, JobResult, OutputFormat } from "../sha
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const runningJobs = new Map<string, ChildProcessByStdio<null, Readable, Readable>>();
 
-function audioSubtitlesCommand(): string {
+interface CommandInvocation {
+  command: string;
+  argsPrefix: string[];
+}
+
+function audioSubtitlesInvocation(): CommandInvocation {
   const localCommand = path.join(homedir(), ".local", "bin", "audio-subtitles");
-  return existsSync(localCommand) ? localCommand : "audio-subtitles";
+  if (existsSync(localCommand)) {
+    return { command: localCommand, argsPrefix: [] };
+  }
+
+  const pathCommand = findExecutable("audio-subtitles");
+  if (pathCommand) {
+    return { command: pathCommand, argsPrefix: [] };
+  }
+
+  const bundledScript = bundledAudioSubtitlesScript();
+  if (bundledScript) {
+    const python = pythonInvocation();
+    if (!python) {
+      throw new Error(
+        "VocalFlow Studio includes its audio-subtitles script, but Python 3 was not found. Install Python 3 first, then install the runtime dependencies from the README."
+      );
+    }
+    return {
+      command: python.command,
+      argsPrefix: [...python.argsPrefix, bundledScript]
+    };
+  }
+
+  throw new Error(
+    "audio-subtitles was not found. Install the CLI with ./install.sh, or reinstall VocalFlow Studio so the bundled audio-subtitles script is included."
+  );
 }
 
 function createWindow(): void {
@@ -43,6 +73,7 @@ app.whenReady().then(() => {
     path.join(homedir(), ".local", "bin"),
     "/opt/homebrew/bin",
     "/usr/local/bin",
+    "/usr/bin",
     process.env.PATH ?? ""
   ].join(path.delimiter);
 
@@ -119,7 +150,7 @@ function registerIpcHandlers(): void {
 
       child.on("error", (error) => {
         runningJobs.delete(jobId);
-        reject(error);
+        reject(new Error(formatSpawnError(error, preview.command)));
       });
 
       child.on("close", (exitCode, signal) => {
@@ -155,13 +186,84 @@ function registerIpcHandlers(): void {
 }
 
 function buildCommandPreview(options: JobOptions): CommandPreview {
-  const command = audioSubtitlesCommand();
-  const args = buildAudioSubtitlesArgs(options);
+  const invocation = audioSubtitlesInvocation();
+  const command = invocation.command;
+  const args = [...invocation.argsPrefix, ...buildAudioSubtitlesArgs(options)];
   return {
     command,
     args,
     display: [quoteForDisplay(command), ...args.map(quoteForDisplay)].join(" ")
   };
+}
+
+function bundledAudioSubtitlesScript(): string | null {
+  const candidates = [
+    process.env.VOCALFLOW_AUDIO_SUBTITLES_SCRIPT,
+    app.isPackaged
+      ? path.join(process.resourcesPath, "audio-subtitles", "scripts", "generate_subtitles.py")
+      : path.resolve(__dirname, "../../../../skills/audio-subtitles/scripts/generate_subtitles.py")
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+function pythonInvocation(): CommandInvocation | null {
+  const configuredPython = process.env.AUDIO_SUBTITLES_PYTHON;
+  if (configuredPython && existsSync(configuredPython)) {
+    return { command: configuredPython, argsPrefix: [] };
+  }
+
+  const candidates: CommandInvocation[] =
+    process.platform === "win32"
+      ? [
+          { command: "py", argsPrefix: ["-3"] },
+          { command: "python", argsPrefix: [] },
+          { command: "python3", argsPrefix: [] }
+        ]
+      : [
+          { command: "python3", argsPrefix: [] },
+          { command: "python", argsPrefix: [] }
+        ];
+
+  for (const candidate of candidates) {
+    const command = findExecutable(candidate.command);
+    if (command) {
+      return { command, argsPrefix: candidate.argsPrefix };
+    }
+  }
+
+  return null;
+}
+
+function findExecutable(command: string): string | null {
+  if (command.includes("/") || command.includes("\\")) {
+    return existsSync(command) ? command : null;
+  }
+
+  const extensions = process.platform === "win32" ? (process.env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";") : [""];
+  const directories = (process.env.PATH ?? "").split(path.delimiter).filter(Boolean);
+
+  for (const directory of directories) {
+    for (const extension of extensions) {
+      const candidate = path.join(directory, `${command}${extension}`);
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatSpawnError(error: Error, command: string): string {
+  const code = "code" in error ? String((error as NodeJS.ErrnoException).code) : "";
+  if (code === "ENOENT") {
+    return `Unable to start ${command}: executable not found. Install Python 3 and the runtime dependencies from the README, then try again.`;
+  }
+  if (code === "EACCES") {
+    return `Unable to start ${command}: permission denied. Check executable permissions and try again.`;
+  }
+  return error.message;
 }
 
 function buildAudioSubtitlesArgs(options: JobOptions): string[] {

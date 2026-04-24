@@ -6,12 +6,12 @@ VocalFlow Studio is a desktop and CLI toolkit for singing practice, video subtit
 
 ## Download
 
-Latest release: [v0.1.1](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.1)
+Latest release: [v0.1.2](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.2)
 
-- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-mac-arm64.dmg)
-- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.1/VocalFlow.Studio-0.1.1-win-x64.exe)
+- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-mac-arm64.dmg)
+- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-win-x64.exe)
 
-The desktop app is currently a CLI shell. Full media processing still requires the runtime setup below.
+The desktop app includes the `audio-subtitles` script, but full media processing still requires the runtime setup below: Python 3, `ffmpeg`, `yt-dlp`, and optional local transcription/separation dependencies.
 
 ## Use Cases
 
@@ -120,7 +120,7 @@ pnpm install
 pnpm dev
 ```
 
-The desktop app is currently a CLI shell. Media processing still comes from `audio-subtitles`. It supports:
+The desktop app includes the `audio-subtitles` script. Media processing still depends on the runtime tools above. It supports:
 
 - Pasting YouTube / Bilibili URLs.
 - Selecting local audio, video, or UVR output folders.
@@ -169,8 +169,8 @@ media-mp3 --browser chrome "https://www.bilibili.com/video/BV..."
 Maintainers can push a version tag to let GitHub Actions build desktop installers and upload them to a GitHub Release:
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 Release assets:
@@ -178,7 +178,7 @@ Release assets:
 - macOS: `.dmg`
 - Windows: `.exe`
 
-Note: the desktop app is currently a CLI shell. After installing the DMG/EXE, full media processing still requires `audio-subtitles`, `ffmpeg`, `yt-dlp`, and the optional local transcription/separation dependencies on the user's machine.
+Note: the desktop app includes the `audio-subtitles` script. After installing the DMG/EXE, full media processing still requires Python 3, `ffmpeg`, `yt-dlp`, and the optional local transcription/separation dependencies on the user's machine.
 
 ## Outputs
 
