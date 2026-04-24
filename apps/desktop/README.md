@@ -34,13 +34,13 @@ Start the app:
 pnpm dev
 ```
 
-The packaged app includes the `audio-subtitles` script. During local development, the main process also prefers a user-installed CLI at:
+The packaged app includes the `audio-subtitles` script, a bundled Python runtime, and bundled ffmpeg. During local development, the main process also prefers a user-installed CLI at:
 
 ```text
 ~/.local/bin/audio-subtitles
 ```
 
-Full media processing still needs runtime tools on the user's machine: Python 3, `ffmpeg`, `yt-dlp`, and optional local transcription/separation dependencies.
+For packaged users, Python packages are installed automatically into the user's app data directory on first use. First-run setup needs internet access because `yt-dlp`, `faster-whisper`, optional `audio-separator[cpu]`, and Whisper models are downloaded on demand.
 
 ## Current Scope
 
@@ -57,8 +57,8 @@ Full media processing still needs runtime tools on the user's machine: Python 3,
 This project uses GitHub Actions to build release installers from version tags:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The workflow uploads:
@@ -66,11 +66,10 @@ The workflow uploads:
 - macOS `.dmg`
 - Windows `.exe`
 
-The packaged app includes the `audio-subtitles` script, but runtime dependencies still need to be installed on the user's machine.
+The packaged app includes the `audio-subtitles` script, bundled Python, and bundled ffmpeg. Runtime Python packages are prepared automatically on first use.
 
 ## Not Included Yet
 
 - Batch queue execution.
 - Timeline lyric editor.
-- Model/dependency setup UI.
 - Auto-update.

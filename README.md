@@ -6,12 +6,12 @@ VocalFlow Studio is a desktop and CLI toolkit for singing practice, video subtit
 
 ## Download
 
-Latest release: [v0.1.2](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.2)
+Latest release: [v0.1.3](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.3)
 
-- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-mac-arm64.dmg)
-- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-win-x64.exe)
+- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.3/VocalFlow.Studio-0.1.3-mac-arm64.dmg)
+- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.3/VocalFlow.Studio-0.1.3-win-x64.exe)
 
-The desktop app includes the `audio-subtitles` script, but full media processing still requires the runtime setup below: Python 3, `ffmpeg`, `yt-dlp`, and optional local transcription/separation dependencies.
+The desktop app includes the `audio-subtitles` script, a bundled Python runtime, and bundled ffmpeg. On first use, it creates a local runtime in the user's app data directory and installs the Python packages needed for URL downloads, local transcription, and optional vocal separation. The first run needs internet access.
 
 ## Use Cases
 
@@ -88,7 +88,7 @@ media-mp3 "https://www.youtube.com/watch?v=..."
 
 The old `youtube-mp3` command remains available as a compatibility alias.
 
-## Install
+## CLI Install
 
 ```bash
 git clone https://github.com/gottaegbert/audio-workflow-skills.git
@@ -120,7 +120,7 @@ pnpm install
 pnpm dev
 ```
 
-The desktop app includes the `audio-subtitles` script. Media processing still depends on the runtime tools above. It supports:
+The desktop app includes the `audio-subtitles` script, bundled Python, and bundled ffmpeg. It auto-installs Python packages on first use instead of requiring users to run CLI setup commands. It supports:
 
 - Pasting YouTube / Bilibili URLs.
 - Selecting local audio, video, or UVR output folders.
@@ -169,8 +169,8 @@ media-mp3 --browser chrome "https://www.bilibili.com/video/BV..."
 Maintainers can push a version tag to let GitHub Actions build desktop installers and upload them to a GitHub Release:
 
 ```bash
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 Release assets:
@@ -178,7 +178,7 @@ Release assets:
 - macOS: `.dmg`
 - Windows: `.exe`
 
-Note: the desktop app includes the `audio-subtitles` script. After installing the DMG/EXE, full media processing still requires Python 3, `ffmpeg`, `yt-dlp`, and the optional local transcription/separation dependencies on the user's machine.
+Note: the desktop app includes the `audio-subtitles` script, a bundled Python runtime, and bundled ffmpeg. It installs `yt-dlp`, `faster-whisper`, and optional `audio-separator[cpu]` into a local app runtime on first use.
 
 ## Outputs
 

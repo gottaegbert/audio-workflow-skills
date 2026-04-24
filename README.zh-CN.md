@@ -6,12 +6,12 @@ VocalFlow Studio 是一个面向唱歌练习、视频字幕和人声分离的桌
 
 ## 下载
 
-最新版本：[v0.1.2](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.2)
+最新版本：[v0.1.3](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.3)
 
-- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-mac-arm64.dmg)
-- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.2/VocalFlow.Studio-0.1.2-win-x64.exe)
+- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.3/VocalFlow.Studio-0.1.3-mac-arm64.dmg)
+- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.3/VocalFlow.Studio-0.1.3-win-x64.exe)
 
-当前桌面 app 已内置 `audio-subtitles` 脚本，但完整媒体处理仍需要安装下面的运行依赖：Python 3、`ffmpeg`、`yt-dlp`，以及可选的本地识别/人声分离依赖。
+桌面 app 已内置 `audio-subtitles` 脚本、Python runtime 和 ffmpeg。首次使用时，它会在用户的 app data 目录创建本地 runtime，并按需安装 URL 下载、本地识别和可选人声分离需要的 Python packages。首次运行需要联网。
 
 ## 使用场景
 
@@ -88,7 +88,7 @@ media-mp3 "https://www.youtube.com/watch?v=..."
 
 旧命令 `youtube-mp3` 仍然保留，作为兼容别名。
 
-## 安装
+## CLI 安装
 
 ```bash
 git clone https://github.com/gottaegbert/audio-workflow-skills.git
@@ -120,7 +120,7 @@ pnpm install
 pnpm dev
 ```
 
-桌面 app 已内置 `audio-subtitles` 脚本，媒体处理仍依赖上面的运行工具。它支持：
+桌面 app 已内置 `audio-subtitles` 脚本、Python 和 ffmpeg。它会在首次使用时自动安装 Python packages，不需要普通用户手动运行 CLI setup 命令。它支持：
 
 - 粘贴 YouTube / Bilibili URL。
 - 选择本地音频、视频或 UVR 输出文件夹。
@@ -169,8 +169,8 @@ media-mp3 --browser chrome "https://www.bilibili.com/video/BV..."
 维护者推送版本 tag 后，GitHub Actions 会自动构建桌面安装包并上传到 GitHub Release：
 
 ```bash
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 Release 产物：
@@ -178,7 +178,7 @@ Release 产物：
 - macOS: `.dmg`
 - Windows: `.exe`
 
-注意：桌面 app 已内置 `audio-subtitles` 脚本。用户安装 DMG/EXE 后，完整媒体处理仍需要本机安装 Python 3、`ffmpeg`、`yt-dlp`，以及可选的本地转写/人声分离依赖。
+注意：桌面 app 已内置 `audio-subtitles` 脚本、Python runtime 和 ffmpeg。首次使用时会把 `yt-dlp`、`faster-whisper` 和可选的 `audio-separator[cpu]` 安装到本地 app runtime。
 
 ## 输出文件
 

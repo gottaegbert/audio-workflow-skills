@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, for example v0.1.2"
+        description: "Release tag, for example v0.1.3"
         required: true
-        default: "v0.1.2"
+        default: "v0.1.3"
 
 permissions:
   contents: write
@@ -27,11 +27,13 @@ jobs:
             command: pnpm dist:mac
             artifact: desktop-macos
             files: apps/desktop/release/*.dmg
+            python_asset: cpython-3.12.13+20260414-aarch64-apple-darwin-install_only_stripped.tar.gz
           - name: Windows EXE
             os: windows-latest
             command: pnpm dist:win
             artifact: desktop-windows
             files: apps/desktop/release/*.exe
+            python_asset: cpython-3.12.13+20260414-x86_64-pc-windows-msvc-install_only_stripped.tar.gz
 
     steps:
       - name: Check out repository
@@ -52,6 +54,19 @@ jobs:
       - name: Install desktop dependencies
         run: pnpm install --frozen-lockfile
         working-directory: apps/desktop
+
+      - name: Download bundled Python runtime
+        shell: bash
+        working-directory: apps/desktop
+        run: |
+          set -euo pipefail
+          rm -rf vendor/python-runtime
+          mkdir -p vendor/python-runtime
+          curl -L --fail --retry 3 \
+            -o python-runtime.tar.gz \
+            "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/${{ matrix.python_asset }}"
+          tar -xzf python-runtime.tar.gz -C vendor/python-runtime
+          rm python-runtime.tar.gz
 
       - name: Build installer
         run: ${{ matrix.command }}
@@ -102,4 +117,4 @@ jobs:
             - macOS: download the `.dmg`
             - Windows: download the `.exe`
 
-            Note: this desktop app includes the `audio-subtitles` script. Media processing still requires the runtime dependencies documented in the README, including Python 3, `ffmpeg`, `yt-dlp`, and the optional local transcription/separation setup.
+            Note: this desktop app includes the `audio-subtitles` script, a bundled Python runtime, and bundled ffmpeg. On first use it creates a local runtime under the user's app data directory and installs the Python packages needed for URL download, local transcription, and optional vocal separation.

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import { spawn, type ChildProcessByStdio } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import type { Readable } from "node:stream";
@@ -15,7 +15,51 @@ interface CommandInvocation {
   argsPrefix: string[];
 }
 
-function audioSubtitlesInvocation(): CommandInvocation {
+interface PreparedRuntime {
+  env: NodeJS.ProcessEnv;
+  python?: CommandInvocation;
+}
+
+interface RuntimeNeeds {
+  ytDlp: boolean;
+  whisper: boolean;
+  separator: boolean;
+}
+
+type RuntimeLog = (chunk: string) => void;
+
+const runtimePackageChecks = {
+  ytDlp: "import importlib.util; raise SystemExit(0 if importlib.util.find_spec('yt_dlp') else 1)",
+  whisper: "import importlib.util; raise SystemExit(0 if importlib.util.find_spec('faster_whisper') else 1)",
+  separator: "import importlib.util; raise SystemExit(0 if importlib.util.find_spec('audio_separator') else 1)"
+};
+
+const runtimePackages = {
+  ytDlp: "yt-dlp",
+  whisper: "faster-whisper",
+  separator: "audio-separator[cpu]"
+};
+
+function audioSubtitlesInvocation(runtime?: PreparedRuntime): CommandInvocation {
+  const bundledScript = bundledAudioSubtitlesScript();
+  if (bundledScript && runtime?.python) {
+    return {
+      command: runtime.python.command,
+      argsPrefix: [...runtime.python.argsPrefix, bundledScript]
+    };
+  }
+
+  if (bundledScript && app.isPackaged) {
+    const python = pythonInvocation();
+    if (!python) {
+      throw new Error("VocalFlow Studio could not find its bundled Python runtime. Reinstall the app and try again.");
+    }
+    return {
+      command: python.command,
+      argsPrefix: [...python.argsPrefix, bundledScript]
+    };
+  }
+
   const localCommand = path.join(homedir(), ".local", "bin", "audio-subtitles");
   if (existsSync(localCommand)) {
     return { command: localCommand, argsPrefix: [] };
@@ -26,12 +70,11 @@ function audioSubtitlesInvocation(): CommandInvocation {
     return { command: pathCommand, argsPrefix: [] };
   }
 
-  const bundledScript = bundledAudioSubtitlesScript();
   if (bundledScript) {
     const python = pythonInvocation();
     if (!python) {
       throw new Error(
-        "VocalFlow Studio includes its audio-subtitles script, but Python 3 was not found. Install Python 3 first, then install the runtime dependencies from the README."
+        "VocalFlow Studio includes its audio-subtitles script, but Python 3 was not found. Reinstall the app or install Python 3 and try again."
       );
     }
     return {
@@ -124,11 +167,14 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle("job:run", async (event, jobId: string, options: JobOptions): Promise<JobResult> => {
-    const preview = buildCommandPreview(options);
+    const runtime = await prepareAudioRuntime(options, (chunk) => {
+      event.sender.send("job:log", { jobId, stream: "stderr", chunk });
+    });
+    const preview = buildCommandPreview(options, runtime);
 
     return new Promise((resolve, reject) => {
       const child = spawn(preview.command, preview.args, {
-        env: process.env,
+        env: runtime.env,
         stdio: ["ignore", "pipe", "pipe"]
       });
 
@@ -185,8 +231,8 @@ function registerIpcHandlers(): void {
   });
 }
 
-function buildCommandPreview(options: JobOptions): CommandPreview {
-  const invocation = audioSubtitlesInvocation();
+function buildCommandPreview(options: JobOptions, runtime?: PreparedRuntime): CommandPreview {
+  const invocation = audioSubtitlesInvocation(runtime);
   const command = invocation.command;
   const args = [...invocation.argsPrefix, ...buildAudioSubtitlesArgs(options)];
   return {
@@ -194,6 +240,162 @@ function buildCommandPreview(options: JobOptions): CommandPreview {
     args,
     display: [quoteForDisplay(command), ...args.map(quoteForDisplay)].join(" ")
   };
+}
+
+async function prepareAudioRuntime(options: JobOptions, log: RuntimeLog): Promise<PreparedRuntime> {
+  const pathDirs = [
+    venvBinDir(runtimeVenvDir()),
+    bundledFfmpegDir(),
+    path.join(homedir(), ".local", "bin"),
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+    "/usr/bin"
+  ].filter((item): item is string => Boolean(item));
+  const env = withPath(process.env, pathDirs);
+  const needs = runtimeNeeds(options);
+
+  if (!needs.ytDlp && !needs.whisper && !needs.separator) {
+    return { env };
+  }
+
+  const basePython = bundledPythonInvocation() ?? pythonInvocation();
+  if (!basePython) {
+    throw new Error(
+      "VocalFlow Studio could not find Python. Reinstall the app and try again; the installer should include a bundled Python runtime."
+    );
+  }
+
+  const venvDir = runtimeVenvDir();
+  const venvPython = runtimeVenvPython(venvDir);
+  mkdirSync(path.dirname(venvDir), { recursive: true });
+
+  if (!existsSync(venvPython)) {
+    log("[runtime] Preparing first-run Python environment. This can take a minute.\n");
+    await runRuntimeCommand(basePython.command, [...basePython.argsPrefix, "-m", "venv", venvDir], env, log);
+  }
+
+  const venvPythonInvocation = { command: venvPython, argsPrefix: [] };
+  const runtimeEnv = withPath(
+    {
+      ...env,
+      AUDIO_SUBTITLES_PYTHON: venvPython,
+      AUDIO_SUBTITLES_VENV: venvDir,
+      PYTHONNOUSERSITE: "1",
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    },
+    pathDirs
+  );
+
+  const missingPackages: string[] = [];
+  if (needs.ytDlp && !(await pythonCheck(venvPython, runtimePackageChecks.ytDlp, runtimeEnv))) {
+    missingPackages.push(runtimePackages.ytDlp);
+  }
+  if (needs.whisper && !(await pythonCheck(venvPython, runtimePackageChecks.whisper, runtimeEnv))) {
+    missingPackages.push(runtimePackages.whisper);
+  }
+  if (needs.separator && !(await pythonCheck(venvPython, runtimePackageChecks.separator, runtimeEnv))) {
+    missingPackages.push(runtimePackages.separator);
+  }
+
+  if (missingPackages.length > 0) {
+    log(`[runtime] Installing ${missingPackages.join(", ")}. First run may take several minutes.\n`);
+    await runRuntimeCommand(venvPython, ["-m", "pip", "install", "--upgrade", "pip", "wheel", "setuptools"], runtimeEnv, log);
+    await runRuntimeCommand(venvPython, ["-m", "pip", "install", "--upgrade", ...missingPackages], runtimeEnv, log);
+  }
+
+  log("[runtime] Runtime ready.\n");
+  return { env: runtimeEnv, python: venvPythonInvocation };
+}
+
+function runtimeNeeds(options: JobOptions): RuntimeNeeds {
+  const input = options.input.trim();
+  const urlInput = isHttpUrl(input);
+  const bilibiliInput = isBilibiliUrl(input);
+  const needsLocalTranscription =
+    !urlInput || options.subtitleSource === "local" || options.localFallback || bilibiliInput || options.separate;
+
+  return {
+    ytDlp: urlInput,
+    whisper: needsLocalTranscription,
+    separator: options.separate
+  };
+}
+
+function runtimeVenvDir(): string {
+  return path.join(app.getPath("userData"), "runtime", "audio-subtitles-venv");
+}
+
+function runtimeVenvPython(venvDir: string): string {
+  return process.platform === "win32" ? path.join(venvDir, "Scripts", "python.exe") : path.join(venvDir, "bin", "python");
+}
+
+function venvBinDir(venvDir: string): string {
+  return process.platform === "win32" ? path.join(venvDir, "Scripts") : path.join(venvDir, "bin");
+}
+
+function bundledFfmpegDir(): string | null {
+  const candidate = app.isPackaged
+    ? path.join(process.resourcesPath, "ffmpeg-static")
+    : path.resolve(__dirname, "../../node_modules/ffmpeg-static");
+  return existsSync(candidate) ? candidate : null;
+}
+
+function withPath(baseEnv: NodeJS.ProcessEnv, pathDirs: string[]): NodeJS.ProcessEnv {
+  return {
+    ...baseEnv,
+    PATH: [...pathDirs, baseEnv.PATH ?? ""].join(path.delimiter)
+  };
+}
+
+function pythonCheck(python: string, code: string, env: NodeJS.ProcessEnv): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn(python, ["-c", code], {
+      env,
+      stdio: ["ignore", "ignore", "ignore"]
+    });
+    child.on("error", () => resolve(false));
+    child.on("close", (exitCode) => resolve(exitCode === 0));
+  });
+}
+
+function runRuntimeCommand(command: string, args: string[], env: NodeJS.ProcessEnv, log: RuntimeLog): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      env,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    let output = "";
+
+    child.stdout.on("data", (buffer: Buffer) => {
+      const chunk = buffer.toString();
+      output += chunk;
+      log(chunk);
+    });
+
+    child.stderr.on("data", (buffer: Buffer) => {
+      const chunk = buffer.toString();
+      output += chunk;
+      log(chunk);
+    });
+
+    child.on("error", (error) => {
+      reject(new Error(formatSpawnError(error, command)));
+    });
+
+    child.on("close", (exitCode) => {
+      if (exitCode === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`${command} exited with code ${exitCode ?? "unknown"} while preparing the runtime.\n${lastOutputLine(output)}`));
+    });
+  });
+}
+
+function lastOutputLine(output: string): string {
+  const lines = output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  return lines.at(-1) ?? "";
 }
 
 function bundledAudioSubtitlesScript(): string | null {
@@ -207,7 +409,24 @@ function bundledAudioSubtitlesScript(): string | null {
   return candidates.find((candidate) => existsSync(candidate)) ?? null;
 }
 
+function bundledPythonInvocation(): CommandInvocation | null {
+  const root = app.isPackaged
+    ? path.join(process.resourcesPath, "python-runtime", "python")
+    : path.resolve(__dirname, "../../vendor/python-runtime/python");
+  const candidates =
+    process.platform === "win32"
+      ? [path.join(root, "python.exe")]
+      : [path.join(root, "bin", "python3"), path.join(root, "bin", "python")];
+  const command = candidates.find((candidate) => existsSync(candidate));
+  return command ? { command, argsPrefix: [] } : null;
+}
+
 function pythonInvocation(): CommandInvocation | null {
+  const bundledPython = bundledPythonInvocation();
+  if (bundledPython) {
+    return bundledPython;
+  }
+
   const configuredPython = process.env.AUDIO_SUBTITLES_PYTHON;
   if (configuredPython && existsSync(configuredPython)) {
     return { command: configuredPython, argsPrefix: [] };
@@ -300,6 +519,7 @@ function buildAudioSubtitlesArgs(options: JobOptions): string[] {
   }
   if (options.separate) {
     args.push("--separate");
+    args.push("--separator-format", "MP3");
   }
   if (options.saveAudio) {
     args.push("--save-audio");
@@ -319,17 +539,42 @@ function normalizeFormats(formats: OutputFormat[]): OutputFormat[] {
   return selected.length > 0 ? selected : fallback;
 }
 
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isBilibiliUrl(value: string): boolean {
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return host === "b23.tv" || host === "bilibili.com" || host.endsWith(".bilibili.com");
+  } catch {
+    return false;
+  }
+}
+
 function parseGeneratedOutput(output: string): Pick<JobResult, "outputDir" | "generatedFiles"> {
   const outputDirMatch = output.match(/^Output directory:\s*(.+)$/m);
   const generatedFiles = output
     .split(/\r?\n/)
-    .map((line) => line.match(/^\s*-\s+(.+)$/)?.[1])
+    .map((line) => {
+      const trimmed = line.trim();
+      return trimmed.match(/^\s*-\s+(.+)$/)?.[1] ?? (looksLikeGeneratedFile(trimmed) ? trimmed : null);
+    })
     .filter((item): item is string => Boolean(item));
 
   return {
     outputDir: outputDirMatch?.[1]?.trim() ?? "",
     generatedFiles
   };
+}
+
+function looksLikeGeneratedFile(value: string): boolean {
+  return /\.(srt|vtt|lrc|txt|json|mp3|wav|m4a|flac)$/i.test(value) && (path.isAbsolute(value) || value.includes(path.sep));
 }
 
 function quoteForDisplay(value: string): string {
