@@ -2,6 +2,8 @@
 
 Prototype Electron app for the `audio-subtitles` CLI.
 
+For bilingual, scenario-based usage docs, see the root [README](../../README.md).
+
 The app is intentionally a thin shell:
 
 - UI handles input, settings, queue, logs, and output discovery.
@@ -22,13 +24,13 @@ Install desktop dependencies:
 
 ```bash
 cd apps/desktop
-npm install
+pnpm install
 ```
 
 Start the app:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 The app expects `audio-subtitles` to be on PATH. On macOS, the main process also checks:
@@ -47,9 +49,24 @@ The app expects `audio-subtitles` to be on PATH. On macOS, the main process also
 - Run one job at a time with live logs.
 - Open output folder or generated files.
 
+## Release Installers
+
+This project uses GitHub Actions to build release installers from version tags:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow uploads:
+
+- macOS `.dmg`
+- Windows `.exe`
+
+The packaged app still expects the `audio-subtitles` CLI and runtime dependencies to be installed on the user's machine.
+
 ## Not Included Yet
 
-- Installer packaging.
 - Batch queue execution.
 - Timeline lyric editor.
 - Model/dependency setup UI.

@@ -1,0 +1,105 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v0.1.0"
+        required: true
+        default: "v0.1.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS DMG
+            os: macos-latest
+            command: pnpm dist:mac
+            artifact: desktop-macos
+            files: apps/desktop/release/*.dmg
+          - name: Windows EXE
+            os: windows-latest
+            command: pnpm dist:win
+            artifact: desktop-windows
+            files: apps/desktop/release/*.exe
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+
+      - name: Install desktop dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: apps/desktop
+
+      - name: Build installer
+        run: ${{ matrix.command }}
+        working-directory: apps/desktop
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Audio Workflow Desktop ${{ steps.release.outputs.tag }}
+          draft: false
+          prerelease: true
+          files: release-assets/*
+          body: |
+            Desktop prototype installers for Audio Workflow.
+
+            Assets:
+            - macOS: download the `.dmg`
+            - Windows: download the `.exe`
+
+            Note: this desktop app wraps the `audio-subtitles` CLI. Media processing still requires the runtime dependencies documented in the README, including `ffmpeg`, `yt-dlp`, and the optional local transcription/separation setup.

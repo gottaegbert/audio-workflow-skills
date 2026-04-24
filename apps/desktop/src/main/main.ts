@@ -1,13 +1,14 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, type ChildProcessByStdio } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import type { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import type { CommandPreview, JobOptions, JobResult, OutputFormat } from "../shared/types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const runningJobs = new Map<string, ChildProcessWithoutNullStreams>();
+const runningJobs = new Map<string, ChildProcessByStdio<null, Readable, Readable>>();
 
 function audioSubtitlesCommand(): string {
   const localCommand = path.join(homedir(), ".local", "bin", "audio-subtitles");
@@ -33,7 +34,7 @@ function createWindow(): void {
   if (app.isPackaged) {
     window.loadFile(path.join(__dirname, "../renderer/index.html"));
   } else {
-    window.loadURL(process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5173");
+    window.loadURL(process.env.VITE_DEV_SERVER_URL ?? "http://127.0.0.1:5174");
   }
 }
 
