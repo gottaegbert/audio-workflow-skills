@@ -27,6 +27,12 @@ set -euo pipefail
 exec "$skills_dir/youtube-mp3/scripts/download_mp3.sh" "\$@"
 EOF
 
+cat > "$bin_dir/media-mp3" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$skills_dir/youtube-mp3/scripts/download_mp3.sh" "\$@"
+EOF
+
 cat > "$bin_dir/setup-audio-subtitles" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
@@ -41,6 +47,7 @@ EOF
 
 chmod +x \
   "$bin_dir/audio-subtitles" \
+  "$bin_dir/media-mp3" \
   "$bin_dir/youtube-mp3" \
   "$bin_dir/setup-audio-subtitles" \
   "$bin_dir/setup-audio-separator" \

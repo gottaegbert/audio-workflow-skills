@@ -91,12 +91,12 @@ jobs:
         with:
           tag_name: ${{ steps.release.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Audio Workflow Desktop ${{ steps.release.outputs.tag }}
+          name: VocalFlow Studio ${{ steps.release.outputs.tag }}
           draft: false
           prerelease: true
           files: release-assets/*
           body: |
-            Desktop prototype installers for Audio Workflow.
+            Desktop prototype installers for VocalFlow Studio.
 
             Assets:
             - macOS: download the `.dmg`

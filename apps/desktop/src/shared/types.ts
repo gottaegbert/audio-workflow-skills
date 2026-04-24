@@ -1,4 +1,4 @@
-export type SubtitleSource = "auto" | "youtube" | "local";
+export type SubtitleSource = "auto" | "platform" | "local";
 
 export type OutputFormat = "lrc" | "srt" | "vtt" | "txt" | "json";
 

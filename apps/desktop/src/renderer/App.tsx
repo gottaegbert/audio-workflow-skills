@@ -181,8 +181,8 @@ export default function App() {
     <main className="appShell">
       <section className="topBar">
         <div>
-          <p className="eyebrow">Audio Workflow</p>
-          <h1>Subtitle and karaoke package maker</h1>
+          <p className="eyebrow">VocalFlow Studio</p>
+          <h1>Karaoke stems and subtitle maker</h1>
         </div>
         <div className="statusPill" data-state={activeJob?.status ?? "idle"}>
           {statusMessage}
@@ -191,14 +191,14 @@ export default function App() {
 
       <section className="inputBand" onDrop={handleDrop} onDragOver={(event) => event.preventDefault()}>
         <label className="inputLabel" htmlFor="input">
-          YouTube URL, audio/video file, or UVR folder
+          Media URL, audio/video file, or vocal stem folder
         </label>
         <div className="inputRow">
           <input
             id="input"
             value={options.input}
             onChange={(event) => updateOptions({ input: event.target.value })}
-            placeholder="Paste a YouTube URL or drop a local file here"
+            placeholder="Paste a YouTube/Bilibili URL or drop a local file here"
           />
           <button type="button" className="secondaryButton" onClick={chooseInput}>
             Select
@@ -247,7 +247,7 @@ export default function App() {
                 value={options.subtitleSource}
                 options={[
                   ["auto", "Auto"],
-                  ["youtube", "YouTube"],
+                  ["platform", "Platform"],
                   ["local", "Local"]
                 ]}
                 onChange={(value) => updateOptions({ subtitleSource: value })}
@@ -271,11 +271,11 @@ export default function App() {
               />
             </Field>
 
-            <Field label="YouTube subtitle languages">
+            <Field label="Platform subtitle languages">
               <input
                 value={options.subLangs}
                 onChange={(event) => updateOptions({ subLangs: event.target.value })}
-                placeholder="Auto, zh.*,en.*"
+                placeholder="Auto, zh.*,en.*,ja.*"
               />
             </Field>
 

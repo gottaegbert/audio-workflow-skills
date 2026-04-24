@@ -45,6 +45,8 @@ class Cue:
 def main() -> int:
     maybe_reexec_venv()
     args = parse_args()
+    if args.subtitle_source == "youtube":
+        args.subtitle_source = "platform"
     if args.force_local:
         args.subtitle_source = "local"
 
@@ -58,18 +60,19 @@ def main() -> int:
             base_name, cues, metadata = platform_result
             outputs = write_outputs(output_dir, base_name, cues, metadata, formats)
             print(f"Source: {args.input}")
-            print(f"Subtitle source: YouTube")
+            print("Subtitle source: Platform")
             print(f"Output directory: {output_dir}")
             for path in outputs:
                 print(path)
             return 0
-        if args.subtitle_source == "youtube" or not args.local_fallback:
+        local_fallback = args.local_fallback or should_default_to_local_fallback(args.input, args)
+        if args.subtitle_source == "platform" or not local_fallback:
             raise SystemExit(
-                "No YouTube subtitles found for the requested language(s). "
+                "No platform subtitles found for the requested language(s). "
                 "Rerun with --local-fallback to use the local Whisper model, "
                 "or use --subtitle-source local to skip platform subtitles."
             )
-        print("No YouTube subtitles found; falling back to local transcription.", file=sys.stderr)
+        print("No platform subtitles found; falling back to local transcription.", file=sys.stderr)
 
     cleanups: list[Callable[[], None]] = []
     source, source_cleanup = resolve_source(args.input, args.stem, output_dir, args)
@@ -98,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate SRT, VTT, LRC, TXT, and JSON subtitles from audio, video, or UVR vocal stems."
     )
-    parser.add_argument("input", help="Audio/video file, UVR output folder, or YouTube/media URL.")
+    parser.add_argument("input", help="Audio/video file, UVR output folder, or media URL such as YouTube or Bilibili.")
     parser.add_argument("--output-dir", help="Directory for generated subtitle files.")
     parser.add_argument("--model", default="medium", help="Whisper model name, e.g. small, medium, large-v3-turbo.")
     parser.add_argument("--language", help="Language code such as en, zh, ja. Omit for auto-detect.")
@@ -116,9 +119,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cookies", help="Use a Netscape-format cookies.txt file with yt-dlp.")
     parser.add_argument(
         "--subtitle-source",
-        choices=["auto", "youtube", "local"],
+        choices=["auto", "platform", "youtube", "local"],
         default="auto",
-        help="For URLs: auto/youtube tries platform subtitles first; local uses Whisper directly.",
+        help="For URLs: auto/platform tries platform subtitles first; local uses Whisper directly. youtube is kept as a compatibility alias for platform.",
     )
     parser.add_argument("--sub-langs", help="yt-dlp subtitle language selector, e.g. zh.*,en.* or all,-live_chat.")
     parser.add_argument("--local-fallback", action="store_true", help="For URL auto mode, use local Whisper if no platform subtitles exist.")
@@ -194,7 +197,7 @@ def stem_score(path: Path, stem: str) -> int:
 
 def default_output_dir(input_value: str) -> Path:
     if is_url(input_value):
-        return Path.home() / "Downloads/Audio Subtitles"
+        return Path.home() / "Downloads/VocalFlow Studio"
     original = Path(input_value).expanduser().resolve()
     return original if original.is_dir() else original.parent
 
@@ -207,6 +210,16 @@ def require_binary(name: str) -> None:
 def is_url(value: str) -> bool:
     parsed = urlparse(value)
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def should_default_to_local_fallback(input_value: str, args: argparse.Namespace) -> bool:
+    return args.subtitle_source == "auto" and is_bilibili_url(input_value)
+
+
+def is_bilibili_url(value: str) -> bool:
+    parsed = urlparse(value)
+    host = parsed.netloc.lower()
+    return host == "b23.tv" or host.endswith(".bilibili.com") or host == "bilibili.com"
 
 
 def download_url_audio(url: str, output_dir: Path, args: argparse.Namespace) -> tuple[Path, Callable[[], None]]:
@@ -302,7 +315,7 @@ def download_url_subtitles(url: str, output_dir: Path, args: argparse.Namespace)
             return None
         base_name = strip_subtitle_suffix(subtitle_path)
         metadata = {
-            "source": "youtube-subtitles",
+            "source": "platform-subtitles",
             "model": None,
             "device": None,
             "compute_type": None,
@@ -317,10 +330,10 @@ def download_url_subtitles(url: str, output_dir: Path, args: argparse.Namespace)
         return base_name, cues, metadata
     except subprocess.CalledProcessError as exc:
         message = last_error_line(exc.stderr or exc.stdout or str(exc))
-        if args.local_fallback and args.subtitle_source == "auto":
-            print(f"YouTube subtitle download failed; falling back to local transcription: {message}", file=sys.stderr)
+        if (args.local_fallback or should_default_to_local_fallback(url, args)) and args.subtitle_source == "auto":
+            print(f"Platform subtitle download failed; falling back to local transcription: {message}", file=sys.stderr)
             return None
-        raise SystemExit(f"yt-dlp failed while downloading YouTube subtitle '{selected_lang}': {message}") from exc
+        raise SystemExit(f"yt-dlp failed while downloading platform subtitle '{selected_lang}': {message}") from exc
     finally:
         if not args.keep_platform_subs:
             cleanup()
@@ -336,7 +349,7 @@ def fetch_url_info(url: str, args: argparse.Namespace) -> dict:
         result = subprocess.run(cmd, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as exc:
         message = last_error_line(exc.stderr or exc.stdout or str(exc))
-        raise SystemExit(f"yt-dlp failed while reading YouTube metadata: {message}") from exc
+        raise SystemExit(f"yt-dlp failed while reading URL metadata: {message}") from exc
     return json.loads(result.stdout)
 
 

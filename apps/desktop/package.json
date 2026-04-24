@@ -1,7 +1,7 @@
 {
-  "name": "@audio-workflow/desktop",
+  "name": "@vocalflow/desktop",
   "version": "0.1.0",
-  "description": "Desktop app for generating karaoke and subtitle assets with audio-subtitles.",
+  "description": "Desktop app for generating vocal stems, karaoke assets, and subtitles with audio-subtitles.",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.20.0",
@@ -18,8 +18,8 @@
     "start": "electron ."
   },
   "build": {
-    "appId": "com.gottaegbert.audioworkflow",
-    "productName": "Audio Workflow",
+    "appId": "com.gottaegbert.vocalflow",
+    "productName": "VocalFlow Studio",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"

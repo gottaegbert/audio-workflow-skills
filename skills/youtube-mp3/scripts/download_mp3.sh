@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  download_mp3.sh [options] URL [URL...]
+  media-mp3 [options] URL [URL...]
 
 Options:
   -o, --output-dir DIR          Save MP3 files to DIR.
@@ -15,11 +15,12 @@ Options:
   -h, --help                    Show this help.
 
 Environment:
-  YOUTUBE_MP3_DIR               Default output directory.
+  MEDIA_MP3_DIR                 Default output directory.
+  YOUTUBE_MP3_DIR               Backward-compatible default output directory.
 USAGE
 }
 
-output_dir="${YOUTUBE_MP3_DIR:-$HOME/Downloads/YouTube MP3}"
+output_dir="${MEDIA_MP3_DIR:-${YOUTUBE_MP3_DIR:-$HOME/Downloads/VocalFlow MP3}}"
 playlist=false
 cookies_browser=""
 cookies_file=""

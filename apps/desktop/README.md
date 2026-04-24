@@ -1,4 +1,4 @@
-# Audio Workflow Desktop
+# VocalFlow Studio Desktop
 
 Prototype Electron app for the `audio-subtitles` CLI.
 
@@ -8,8 +8,9 @@ The app is intentionally a thin shell:
 
 - UI handles input, settings, queue, logs, and output discovery.
 - Processing stays in `audio-subtitles`.
-- YouTube captions are still the default path for YouTube URLs.
-- Local Whisper and source separation are opt-in from the UI.
+- Platform captions are still the first path for supported media URLs.
+- Bilibili falls back to local Whisper by default when platform subtitles are unavailable.
+- Local Whisper and source separation are configurable from the UI.
 
 ## Run Locally
 
@@ -41,8 +42,8 @@ The app expects `audio-subtitles` to be on PATH. On macOS, the main process also
 
 ## Current Scope
 
-- Paste YouTube URL or select a local file/folder.
-- Choose subtitle source: Auto, YouTube, or Local Whisper.
+- Paste YouTube/Bilibili URL or select a local file/folder.
+- Choose subtitle source: Auto, Platform, or Local Whisper.
 - Optional local fallback.
 - Optional source separation.
 - Configure model, language, subtitle language selector, browser cookies, output folder, and output formats.

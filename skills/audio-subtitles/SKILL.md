@@ -1,9 +1,9 @@
 ---
 name: audio-subtitles
-description: Generate timestamped lyrics and subtitles from audio, video, YouTube/media URLs, or vocal stems. Use when Codex needs to turn WAV/MP3/M4A/FLAC audio, MP4/MOV/MKV video, YouTube links, Ultimate Vocal Remover vocal/acapella outputs, or UVR-style separated stems into SRT, VTT, LRC, plain text, or JSON timing files for singing practice, karaoke, lyric display, subtitle editing, or DAW/video workflows.
+description: Generate timestamped lyrics and subtitles from audio, video, media URLs such as YouTube/Bilibili, or vocal stems. Use when Codex needs to turn WAV/MP3/M4A/FLAC audio, MP4/MOV/MKV video, media links, Ultimate Vocal Remover vocal/acapella outputs, or UVR-style separated stems into SRT, VTT, LRC, plain text, or JSON timing files for singing practice, karaoke, lyric display, subtitle editing, or DAW/video workflows.
 ---
 
-# Audio Subtitles
+# VocalFlow Subtitles
 
 ## Default Workflow
 
@@ -17,7 +17,7 @@ Default behavior:
 
 - Accept audio files such as `.wav`, `.mp3`, `.m4a`, `.flac`, `.aac`, `.ogg`, `.opus`, `.aiff`.
 - Accept video files such as `.mp4`, `.mov`, `.mkv`, `.webm`, `.avi`, `.m4v`; extract audio with `ffmpeg`.
-- Accept YouTube/media URLs; use platform subtitles first with `yt-dlp` before any local model work.
+- Accept media URLs such as YouTube or Bilibili; use platform subtitles first with `yt-dlp` before local model work when available.
 - Accept an Ultimate Vocal Remover output folder; prefer files named like `vocals`, `vocal`, `voice`, or `acapella`.
 - Optionally run UVR-style source separation first via `audio-separator`.
 - Output `.srt`, `.vtt`, `.lrc`, `.txt`, and `.json` next to the input unless `--output-dir` is set.
@@ -50,13 +50,14 @@ Generate subtitles from a video file:
 audio-subtitles "/path/to/video.mp4"
 ```
 
-Generate subtitles directly from a YouTube URL:
+Generate subtitles directly from a media URL:
 
 ```bash
 audio-subtitles "https://www.youtube.com/watch?v=..."
+audio-subtitles "https://www.bilibili.com/video/BV..."
 ```
 
-For YouTube URLs, default behavior is to download available YouTube subtitles or auto-subtitles and convert them to `.srt`, `.vtt`, `.lrc`, `.txt`, and `.json`. This avoids running Whisper when platform captions already exist.
+For URL inputs, default behavior is to download available platform subtitles or auto-subtitles and convert them to `.srt`, `.vtt`, `.lrc`, `.txt`, and `.json`. This avoids running Whisper when platform captions already exist. Bilibili URLs fall back to local Whisper by default when no platform subtitles are available.
 
 Select subtitle languages:
 
@@ -65,11 +66,11 @@ audio-subtitles --sub-langs "zh.*,en.*" "https://www.youtube.com/watch?v=..."
 audio-subtitles --language zh "https://www.youtube.com/watch?v=..."
 ```
 
-Use browser cookies if YouTube asks for sign-in:
+Use browser cookies if a site asks for sign-in:
 
 ```bash
 audio-subtitles --browser chrome "https://www.youtube.com/watch?v=..."
-audio-subtitles --browser safari "https://www.youtube.com/watch?v=..."
+audio-subtitles --browser chrome "https://www.bilibili.com/video/BV..."
 ```
 
 Use local Whisper only when explicitly requested:
@@ -79,7 +80,7 @@ audio-subtitles --subtitle-source local "https://www.youtube.com/watch?v=..."
 audio-subtitles --force-local "https://www.youtube.com/watch?v=..."
 ```
 
-Try YouTube subtitles first, then use local Whisper only if none exist:
+Try platform subtitles first, then use local Whisper if none exist:
 
 ```bash
 audio-subtitles --local-fallback "https://www.youtube.com/watch?v=..."
@@ -162,14 +163,16 @@ The official Ultimate Vocal Remover GUI is best treated as a manual stem produce
 
 GarageBand may import audio/MIDI cleanly, but it is not a reliable native subtitle/lyrics-file viewer. Treat the generated `.lrc`/`.srt` as a companion file for a lyrics viewer, video editor, or another music app/plugin that explicitly supports timed lyrics/subtitles.
 
-## YouTube Subtitle Policy
+## Platform Subtitle Policy
 
 For URL inputs, prefer platform subtitles because they are faster, cheaper, and often good enough:
 
-- `--subtitle-source auto` is the default: try YouTube subtitles first.
-- `--subtitle-source youtube` only uses YouTube subtitles and fails if none are available.
-- `--local-fallback` allows auto mode to run local Whisper when YouTube has no matching subtitles.
-- `--subtitle-source local` or `--force-local` skips YouTube subtitles and runs local Whisper.
+- `--subtitle-source auto` is the default: try platform subtitles first.
+- `--subtitle-source platform` only uses platform subtitles and fails if none are available.
+- `--subtitle-source youtube` is kept as a compatibility alias for `platform`.
+- Bilibili URLs default to local Whisper fallback when no platform subtitles are available.
+- `--local-fallback` allows auto mode to run local Whisper when other sites have no matching subtitles.
+- `--subtitle-source local` or `--force-local` skips platform subtitles and runs local Whisper.
 - `--sub-langs` accepts `yt-dlp`-style language selectors such as `zh.*,en.*`, but the script resolves them to one best language before downloading to avoid bulk subtitle downloads and rate limits.
 
 ## Model Guidance

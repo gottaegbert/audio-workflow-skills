@@ -21,7 +21,7 @@ function createWindow(): void {
     height: 760,
     minWidth: 980,
     minHeight: 640,
-    title: "Audio Workflow",
+    title: "VocalFlow Studio",
     backgroundColor: "#f7f7f3",
     webPreferences: {
       preload: path.join(__dirname, "../preload/preload.js"),

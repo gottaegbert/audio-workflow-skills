@@ -1,6 +1,6 @@
-# Audio Workflow Flow
+# VocalFlow Studio Flow
 
-This project is built around one rule: use the cheapest reliable source first. For YouTube URLs, that means platform subtitles before local transcription. For local media, that means clean vocal stems before mixed audio.
+This project is built around one rule: use the cheapest reliable source first. For media URLs, that means platform subtitles before local transcription when available. For Bilibili URLs without platform subtitles, VocalFlow falls back to local Whisper by default. For local media, that means clean vocal stems before mixed audio.
 
 ## High-Level Flow
 
@@ -8,7 +8,7 @@ This project is built around one rule: use the cheapest reliable source first. F
 flowchart TD
   A["Input"] --> B{"Input type"}
 
-  B -->|"YouTube / media URL"| C["Read metadata with yt-dlp"]
+  B -->|"Media URL: YouTube / Bilibili / other"| C["Read metadata with yt-dlp"]
   C --> D{"Captions available?"}
   D -->|Yes| E["Choose one best caption language"]
   E --> F["Download one VTT caption file"]
@@ -33,12 +33,13 @@ flowchart TD
   P --> H
 ```
 
-## YouTube Subtitle-First Path
+## Platform Subtitle-First Path
 
 Default command:
 
 ```bash
 audio-subtitles "https://www.youtube.com/watch?v=..."
+audio-subtitles "https://www.bilibili.com/video/BV..."
 ```
 
 Behavior:
@@ -62,7 +63,7 @@ audio-subtitles --keep-platform-subs "https://www.youtube.com/watch?v=..."
 Force local transcription:
 
 ```bash
-audio-subtitles --subtitle-source local "https://www.youtube.com/watch?v=..."
+audio-subtitles --subtitle-source local "https://www.bilibili.com/video/BV..."
 audio-subtitles --force-local "https://www.youtube.com/watch?v=..."
 ```
 
@@ -71,6 +72,8 @@ Try captions first, then local transcription if no caption exists:
 ```bash
 audio-subtitles --local-fallback "https://www.youtube.com/watch?v=..."
 ```
+
+Bilibili uses this fallback behavior by default in `auto` mode when no platform subtitle is exposed by `yt-dlp`.
 
 ## Local Media Path
 
@@ -102,6 +105,7 @@ If the user wants the CLI to separate first:
 ```bash
 audio-subtitles --separate "/path/to/song.mp3"
 audio-subtitles --separate "https://www.youtube.com/watch?v=..."
+audio-subtitles --separate "https://www.bilibili.com/video/BV..."
 ```
 
 Behavior:

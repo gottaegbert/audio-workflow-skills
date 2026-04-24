@@ -2,7 +2,7 @@
 
 ## Product Intent
 
-Create a desktop app that turns YouTube links, video files, audio files, or UVR stems into practical singing and subtitle assets without requiring CLI knowledge.
+Create a desktop app that turns media links such as YouTube/Bilibili, video files, audio files, or UVR stems into practical singing and subtitle assets without requiring CLI knowledge.
 
 Primary output:
 
@@ -23,7 +23,7 @@ The CLI remains the source of truth. The desktop app should orchestrate existing
 
 ### Inputs
 
-- YouTube URL.
+- YouTube/Bilibili/media URL.
 - Local video file.
 - Local audio file.
 - UVR output folder.
@@ -31,7 +31,8 @@ The CLI remains the source of truth. The desktop app should orchestrate existing
 ### Core Actions
 
 - Detect input type.
-- Prefer YouTube captions for YouTube URLs.
+- Prefer platform captions for media URLs when available.
+- Fall back to local transcription by default for Bilibili URLs without platform subtitles.
 - Fall back to local transcription only when selected.
 - Optional vocal separation.
 - Show job progress and logs.
@@ -51,7 +52,7 @@ The CLI remains the source of truth. The desktop app should orchestrate existing
 - No full DAW integration.
 - No cloud processing.
 - No account system.
-- No built-in YouTube browser.
+- No built-in media-site browser.
 - No destructive editing of source media.
 - No advanced lyric editor in the first release.
 
@@ -63,12 +64,12 @@ Recommended layout:
 
 ```text
 +--------------------------------------------------------------+
-| Audio Workflow                                               |
+| VocalFlow Studio                                             |
 | [URL input or file drop target] [Run]                         |
 +----------------------+---------------------------------------+
 | Queue                | Job Detail                             |
 | - Song A             | Input                                  |
-| - Song B             | Subtitle source: YouTube / Local       |
+| - Song B             | Subtitle source: Platform / Local      |
 | - Song C             | Separation: Off / On                   |
 |                      | Model: medium                          |
 |                      | Output formats: LRC SRT VTT TXT JSON   |
@@ -81,8 +82,8 @@ Recommended layout:
 ```mermaid
 flowchart TD
   A["Drop file or paste URL"] --> B["Create job"]
-  B --> C{"YouTube URL?"}
-  C -->|Yes| D["Check captions"]
+  B --> C{"Media URL?"}
+  C -->|Yes| D["Check platform captions"]
   D --> E{"Captions found?"}
   E -->|Yes| F["Convert captions"]
   E -->|No| G{"Local fallback enabled?"}
@@ -104,8 +105,8 @@ flowchart TD
 
 ### Subtitle Source
 
-- Auto: YouTube captions first, no local fallback unless enabled.
-- YouTube only.
+- Auto: platform captions first; Bilibili defaults to local fallback when needed.
+- Platform only.
 - Local Whisper.
 
 ### Language
@@ -129,7 +130,7 @@ flowchart TD
 ### Output
 
 - Output folder.
-- Keep raw YouTube VTT.
+- Keep raw platform VTT.
 - Keep extracted audio.
 - Keep stems.
 
@@ -145,7 +146,7 @@ Recommended stack:
 ```mermaid
 flowchart LR
   UI["Electron + React UI"] --> IPC["IPC command layer"]
-  IPC --> CLI["audio-subtitles / youtube-mp3"]
+  IPC --> CLI["audio-subtitles / media-mp3"]
   CLI --> YTDLP["yt-dlp"]
   CLI --> FFMPEG["ffmpeg"]
   CLI --> WHISPER["faster-whisper"]
@@ -190,7 +191,7 @@ Each job should store:
 
 Errors should be specific and action-oriented:
 
-- YouTube asked for sign-in: ask user to retry with browser cookies.
+- Media site asked for sign-in: ask user to retry with browser cookies.
 - No captions found: offer local fallback.
 - Local model missing: offer setup command.
 - Separation dependency missing: offer setup command and warn about size.
