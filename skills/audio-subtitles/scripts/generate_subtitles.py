@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 from html import unescape
 import json
 import os
@@ -261,23 +262,30 @@ def download_url_subtitles(url: str, output_dir: Path, args: argparse.Namespace)
         subtitle_dir = Path(temp_dir.name)
         cleanup = temp_dir.cleanup
 
-    sub_langs = args.sub_langs or args.language or "all,-live_chat"
+    info = fetch_url_info(url, args)
+    subtitle_choice = choose_subtitle_language(info, args)
+    if subtitle_choice is None:
+        cleanup()
+        return None
+    selected_lang, subtitle_kind = subtitle_choice
     cmd = [
         "yt-dlp",
         "--skip-download",
         "--no-playlist",
-        "--write-subs",
-        "--write-auto-subs",
         "--sub-format",
         "vtt",
         "--sub-langs",
-        sub_langs,
+        selected_lang,
         "-P",
         str(subtitle_dir),
         "-o",
         "%(title).180B [%(id)s].%(ext)s",
         url,
     ]
+    if subtitle_kind == "manual":
+        cmd.insert(3, "--write-subs")
+    else:
+        cmd.insert(3, "--write-auto-subs")
     if args.browser:
         cmd[1:1] = ["--cookies-from-browser", args.browser]
     if args.cookies:
@@ -302,12 +310,130 @@ def download_url_subtitles(url: str, output_dir: Path, args: argparse.Namespace)
             "language_probability": None,
             "duration": cues[-1].end if cues else None,
             "subtitle_file": str(subtitle_path) if args.keep_platform_subs else None,
-            "subtitle_language_selector": sub_langs,
+            "subtitle_language": selected_lang,
+            "subtitle_kind": subtitle_kind,
+            "subtitle_language_selector": args.sub_langs or args.language or "auto",
         }
         return base_name, cues, metadata
+    except subprocess.CalledProcessError as exc:
+        message = last_error_line(exc.stderr or exc.stdout or str(exc))
+        if args.local_fallback and args.subtitle_source == "auto":
+            print(f"YouTube subtitle download failed; falling back to local transcription: {message}", file=sys.stderr)
+            return None
+        raise SystemExit(f"yt-dlp failed while downloading YouTube subtitle '{selected_lang}': {message}") from exc
     finally:
         if not args.keep_platform_subs:
             cleanup()
+
+
+def fetch_url_info(url: str, args: argparse.Namespace) -> dict:
+    cmd = ["yt-dlp", "--skip-download", "--no-playlist", "--dump-single-json", url]
+    if args.browser:
+        cmd[1:1] = ["--cookies-from-browser", args.browser]
+    if args.cookies:
+        cmd[1:1] = ["--cookies", args.cookies]
+    try:
+        result = subprocess.run(cmd, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as exc:
+        message = last_error_line(exc.stderr or exc.stdout or str(exc))
+        raise SystemExit(f"yt-dlp failed while reading YouTube metadata: {message}") from exc
+    return json.loads(result.stdout)
+
+
+def choose_subtitle_language(info: dict, args: argparse.Namespace) -> tuple[str, str] | None:
+    manual = sorted(code for code in (info.get("subtitles") or {}) if "live_chat" not in code)
+    automatic = sorted(code for code in (info.get("automatic_captions") or {}) if "live_chat" not in code)
+    if not manual and not automatic:
+        return None
+
+    if args.sub_langs:
+        selectors = [item.strip() for item in args.sub_langs.split(",") if item.strip() and not item.strip().startswith("-")]
+        for selector in selectors:
+            choice = match_subtitle_selector(selector, manual, automatic)
+            if choice is not None:
+                return choice
+
+    if args.language:
+        choice = match_subtitle_selector(args.language, manual, automatic)
+        if choice is not None:
+            return choice
+
+    for selector in default_subtitle_priorities():
+        choice = match_subtitle_selector(selector, manual, automatic)
+        if choice is not None:
+            return choice
+
+    if manual:
+        return manual[0], "manual"
+    return automatic[0], "automatic"
+
+
+def match_subtitle_selector(selector: str, manual: list[str], automatic: list[str]) -> tuple[str, str] | None:
+    if selector == "all":
+        for preferred in default_subtitle_priorities():
+            choice = match_subtitle_selector(preferred, manual, automatic)
+            if choice is not None:
+                return choice
+        if manual:
+            return manual[0], "manual"
+        if automatic:
+            return automatic[0], "automatic"
+        return None
+
+    patterns = selector_patterns(selector)
+    for code in manual:
+        if any(subtitle_code_matches(code, pattern) for pattern in patterns):
+            return code, "manual"
+    for code in automatic:
+        if any(subtitle_code_matches(code, pattern) for pattern in patterns):
+            return code, "automatic"
+    return None
+
+
+def selector_patterns(selector: str) -> list[str]:
+    selector = selector.strip()
+    if not selector:
+        return []
+    if any(char in selector for char in "*?[]"):
+        return [selector]
+    return [selector, f"{selector}-*", f"{selector}_*"]
+
+
+def subtitle_code_matches(code: str, pattern: str) -> bool:
+    return code == pattern or fnmatch.fnmatchcase(code, pattern)
+
+
+def default_subtitle_priorities() -> list[str]:
+    return [
+        "en",
+        "en-*",
+        "zh-Hans",
+        "zh-CN",
+        "zh",
+        "zh-*",
+        "zh-Hant",
+        "zh-TW",
+        "ja",
+        "ja-*",
+        "ko",
+        "ko-*",
+        "es",
+        "es-*",
+        "fr",
+        "fr-*",
+        "pt-BR",
+        "pt-*",
+        "fil",
+        "fil-*",
+    ]
+
+
+def last_error_line(output: str) -> str:
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    for line in reversed(lines):
+        if "ERROR:" in line or "WARNING:" in line:
+            return line
+    return lines[-1] if lines else "unknown error"
 
 
 def choose_subtitle_file(candidates: list[Path], language: str | None) -> Path:

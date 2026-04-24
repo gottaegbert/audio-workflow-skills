@@ -65,6 +65,8 @@ audio-subtitles --sub-langs "zh.*,en.*" "https://www.youtube.com/watch?v=..."
 audio-subtitles --keep-platform-subs "https://www.youtube.com/watch?v=..."
 ```
 
+The command resolves subtitle language selectors to one best matching subtitle before downloading, so it avoids the common `--sub-langs all` behavior of downloading hundreds of translated tracks.
+
 Default outputs:
 
 - `.lrc` for synced lyrics.

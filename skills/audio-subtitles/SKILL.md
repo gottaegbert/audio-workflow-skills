@@ -170,7 +170,7 @@ For URL inputs, prefer platform subtitles because they are faster, cheaper, and 
 - `--subtitle-source youtube` only uses YouTube subtitles and fails if none are available.
 - `--local-fallback` allows auto mode to run local Whisper when YouTube has no matching subtitles.
 - `--subtitle-source local` or `--force-local` skips YouTube subtitles and runs local Whisper.
-- `--sub-langs` maps directly to `yt-dlp --sub-langs`; default is `all,-live_chat` so the script can choose a useful language file.
+- `--sub-langs` accepts `yt-dlp`-style language selectors such as `zh.*,en.*`, but the script resolves them to one best language before downloading to avoid bulk subtitle downloads and rate limits.
 
 ## Model Guidance
 
