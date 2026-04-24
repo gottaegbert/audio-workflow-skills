@@ -1,0 +1,392 @@
+:root {
+  color: #20201c;
+  background: #f7f7f3;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 980px;
+  margin: 0;
+  background: #f7f7f3;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.appShell {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #69705d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: 30px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.statusPill {
+  min-width: 128px;
+  border: 1px solid #d8d8cd;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #4b4f44;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.statusPill[data-state="running"] {
+  border-color: #88a5c4;
+  background: #edf5ff;
+  color: #234f79;
+}
+
+.statusPill[data-state="complete"] {
+  border-color: #91b995;
+  background: #edf8ee;
+  color: #245d2b;
+}
+
+.statusPill[data-state="failed"],
+.statusPill[data-state="canceled"] {
+  border-color: #d29b8e;
+  background: #fff0ed;
+  color: #8a2f20;
+}
+
+.inputBand {
+  border: 1px solid #d8d8cd;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.inputLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: #4b4f44;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.inputRow,
+.outputRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 10px;
+}
+
+.outputRow {
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+}
+
+.outputRow label {
+  color: #4b4f44;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid #cfcfc2;
+  border-radius: 6px;
+  padding: 10px 11px;
+  background: #ffffff;
+  color: #20201c;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: #517a9f;
+  box-shadow: 0 0 0 3px rgba(81, 122, 159, 0.16);
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 40px;
+  border-radius: 6px;
+  padding: 0 15px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  border: 1px solid #20201c;
+  background: #20201c;
+  color: #ffffff;
+}
+
+.secondaryButton {
+  border: 1px solid #cfcfc2;
+  background: #ffffff;
+  color: #20201c;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.queuePane,
+.detailPane {
+  min-height: 560px;
+  border: 1px solid #d8d8cd;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.queuePane {
+  padding: 14px;
+}
+
+.detailPane {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.paneHeader,
+.resultHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.paneHeader span {
+  color: #69705d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.queueList {
+  display: grid;
+  gap: 8px;
+}
+
+.queueItem {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 10px;
+  background: #f7f7f3;
+  text-align: left;
+}
+
+.queueItem[data-active="true"] {
+  border-color: #517a9f;
+  background: #edf5ff;
+}
+
+.queueTitle {
+  overflow: hidden;
+  color: #20201c;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.queueMeta {
+  color: #69705d;
+  font-size: 12px;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: #4b4f44;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.segmentedControl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #cfcfc2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmentedControl button {
+  min-height: 40px;
+  border: 0;
+  border-right: 1px solid #cfcfc2;
+  background: #ffffff;
+  color: #20201c;
+  font-weight: 700;
+}
+
+.segmentedControl button:last-child {
+  border-right: 0;
+}
+
+.segmentedControl button[data-selected="true"] {
+  background: #263f54;
+  color: #ffffff;
+}
+
+.switchGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid #d8d8cd;
+  border-radius: 6px;
+  padding: 0 11px;
+  color: #20201c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkboxLabel input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+.formatRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.formatButton {
+  min-width: 64px;
+  min-height: 34px;
+  border: 1px solid #cfcfc2;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #20201c;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.formatButton[data-selected="true"] {
+  border-color: #6e7d4d;
+  background: #eff4df;
+  color: #31410d;
+}
+
+.commandPane,
+.resultPane,
+.logPane {
+  border-top: 1px solid #e4e4d9;
+  padding-top: 14px;
+}
+
+pre {
+  overflow: auto;
+  max-height: 180px;
+  margin: 0;
+  border: 1px solid #d8d8cd;
+  border-radius: 6px;
+  padding: 12px;
+  background: #191b18;
+  color: #f4f4eb;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.logPane pre {
+  max-height: 220px;
+}
+
+.fileList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fileList button {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #f7f7f3;
+  color: #20201c;
+  text-align: left;
+}
+
+.emptyText {
+  margin-bottom: 0;
+  color: #69705d;
+  font-size: 13px;
+}

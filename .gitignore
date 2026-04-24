@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+node_modules/
 dist/
 build/
 *.egg-info/
@@ -15,5 +16,9 @@ build/
 *.vtt
 *.lrc
 *.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.*.json
 *.txt
 cookies.txt

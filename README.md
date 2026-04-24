@@ -33,6 +33,8 @@ More detail: [docs/flow.md](docs/flow.md)
 
 Desktop app product notes: [docs/desktop-app-prd.md](docs/desktop-app-prd.md)
 
+Prototype desktop app: [apps/desktop](apps/desktop)
+
 ## Install
 
 ```bash
@@ -57,6 +59,25 @@ setup-audio-separator
 ```
 
 `setup-audio-separator` installs PyTorch and related separation packages, so it is much larger than the transcription-only setup. Skip it unless you need `audio-subtitles --separate`.
+
+## Desktop App Prototype
+
+The repo includes an Electron prototype that wraps the existing CLI instead of reimplementing media processing:
+
+```bash
+cd apps/desktop
+npm install
+npm run dev
+```
+
+Use it after running the root installer so `audio-subtitles` is available:
+
+```bash
+cd ../..
+./install.sh
+```
+
+The prototype supports URL/file input, output folder selection, YouTube subtitle-first mode, local Whisper mode, optional local fallback, optional vocal separation, command preview, logs, and opening generated files.
 
 ## YouTube to MP3
 
