@@ -5,6 +5,34 @@ Codex skills and CLI helpers for practical audio workflows:
 - `youtube-mp3`: download YouTube videos as MP3 with `yt-dlp` and `ffmpeg`.
 - `audio-subtitles`: generate timestamped lyrics/subtitles from audio, video, YouTube URLs, UVR vocal stems, or optional UVR-style source separation.
 
+## How It Works
+
+The default path avoids local transcription when YouTube already has usable captions:
+
+```mermaid
+flowchart TD
+  A["Input: YouTube URL / Video / Audio / UVR Folder"] --> B{"YouTube URL?"}
+  B -->|Yes| C["Fetch YouTube subtitle list"]
+  C --> D{"Subtitle found?"}
+  D -->|Yes| E["Download one best subtitle"]
+  E --> F["Convert to SRT / VTT / LRC / TXT / JSON"]
+  D -->|No + local fallback| G["Download audio"]
+  B -->|No| H{"Already vocal stem?"}
+  H -->|Yes| I["Use vocal audio"]
+  H -->|No + separate| J["audio-separator: vocals + instrumental"]
+  H -->|No| I
+  G --> K{"Need separation?"}
+  K -->|Yes| J
+  K -->|No| I
+  J --> L["Transcribe vocals with faster-whisper"]
+  I --> L
+  L --> F
+```
+
+More detail: [docs/flow.md](docs/flow.md)
+
+Desktop app product notes: [docs/desktop-app-prd.md](docs/desktop-app-prd.md)
+
 ## Install
 
 ```bash
