@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from html import unescape
 import json
 import os
 import re
@@ -43,9 +44,31 @@ class Cue:
 def main() -> int:
     maybe_reexec_venv()
     args = parse_args()
-    require_binary("ffmpeg")
+    if args.force_local:
+        args.subtitle_source = "local"
+
     output_dir = Path(args.output_dir).expanduser() if args.output_dir else default_output_dir(args.input)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    formats = parse_formats(args.formats)
+    if is_url(args.input) and args.subtitle_source != "local" and not args.separate:
+        platform_result = download_url_subtitles(args.input, output_dir, args)
+        if platform_result is not None:
+            base_name, cues, metadata = platform_result
+            outputs = write_outputs(output_dir, base_name, cues, metadata, formats)
+            print(f"Source: {args.input}")
+            print(f"Subtitle source: YouTube")
+            print(f"Output directory: {output_dir}")
+            for path in outputs:
+                print(path)
+            return 0
+        if args.subtitle_source == "youtube" or not args.local_fallback:
+            raise SystemExit(
+                "No YouTube subtitles found for the requested language(s). "
+                "Rerun with --local-fallback to use the local Whisper model, "
+                "or use --subtitle-source local to skip platform subtitles."
+            )
+        print("No YouTube subtitles found; falling back to local transcription.", file=sys.stderr)
 
     cleanups: list[Callable[[], None]] = []
     source, source_cleanup = resolve_source(args.input, args.stem, output_dir, args)
@@ -61,7 +84,6 @@ def main() -> int:
         for cleanup_func in reversed(cleanups):
             cleanup_func()
 
-    formats = parse_formats(args.formats)
     outputs = write_outputs(output_dir, base_name, cues, metadata, formats)
 
     print(f"Source: {source}")
@@ -91,6 +113,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--separator-format", default="WAV", help="Stem output format for audio-separator.")
     parser.add_argument("--browser", help="Use yt-dlp cookies from browser, e.g. chrome or safari.")
     parser.add_argument("--cookies", help="Use a Netscape-format cookies.txt file with yt-dlp.")
+    parser.add_argument(
+        "--subtitle-source",
+        choices=["auto", "youtube", "local"],
+        default="auto",
+        help="For URLs: auto/youtube tries platform subtitles first; local uses Whisper directly.",
+    )
+    parser.add_argument("--sub-langs", help="yt-dlp subtitle language selector, e.g. zh.*,en.* or all,-live_chat.")
+    parser.add_argument("--local-fallback", action="store_true", help="For URL auto mode, use local Whisper if no platform subtitles exist.")
+    parser.add_argument("--force-local", action="store_true", help="Alias for --subtitle-source local.")
+    parser.add_argument("--keep-platform-subs", action="store_true", help="Keep raw subtitle files downloaded by yt-dlp.")
     parser.add_argument("--max-line-chars", type=int, default=42)
     parser.add_argument("--max-line-words", type=int, default=10)
     parser.add_argument("--line-gap", type=float, default=1.15, help="Start a new lyric line after this word gap in seconds.")
@@ -217,6 +249,165 @@ def download_url_audio(url: str, output_dir: Path, args: argparse.Namespace) -> 
             return path, cleanup
     cleanup()
     raise SystemExit("yt-dlp finished but no downloaded audio file was found.")
+
+
+def download_url_subtitles(url: str, output_dir: Path, args: argparse.Namespace) -> tuple[str, list[Cue], dict] | None:
+    require_binary("yt-dlp")
+    if args.keep_platform_subs:
+        subtitle_dir = output_dir
+        cleanup = lambda: None
+    else:
+        temp_dir = tempfile.TemporaryDirectory(prefix="audio-subtitles-platform-")
+        subtitle_dir = Path(temp_dir.name)
+        cleanup = temp_dir.cleanup
+
+    sub_langs = args.sub_langs or args.language or "all,-live_chat"
+    cmd = [
+        "yt-dlp",
+        "--skip-download",
+        "--no-playlist",
+        "--write-subs",
+        "--write-auto-subs",
+        "--sub-format",
+        "vtt",
+        "--sub-langs",
+        sub_langs,
+        "-P",
+        str(subtitle_dir),
+        "-o",
+        "%(title).180B [%(id)s].%(ext)s",
+        url,
+    ]
+    if args.browser:
+        cmd[1:1] = ["--cookies-from-browser", args.browser]
+    if args.cookies:
+        cmd[1:1] = ["--cookies", args.cookies]
+
+    try:
+        subprocess.run(cmd, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        candidates = [path for path in subtitle_dir.glob("*.vtt") if "live_chat" not in path.name]
+        if not candidates:
+            return None
+        subtitle_path = choose_subtitle_file(candidates, args.language)
+        cues = parse_vtt(subtitle_path)
+        if not cues:
+            return None
+        base_name = strip_subtitle_suffix(subtitle_path)
+        metadata = {
+            "source": "youtube-subtitles",
+            "model": None,
+            "device": None,
+            "compute_type": None,
+            "language": infer_subtitle_language(subtitle_path),
+            "language_probability": None,
+            "duration": cues[-1].end if cues else None,
+            "subtitle_file": str(subtitle_path) if args.keep_platform_subs else None,
+            "subtitle_language_selector": sub_langs,
+        }
+        return base_name, cues, metadata
+    finally:
+        if not args.keep_platform_subs:
+            cleanup()
+
+
+def choose_subtitle_file(candidates: list[Path], language: str | None) -> Path:
+    priorities = [language] if language else []
+    priorities.extend(["zh-Hans", "zh-CN", "zh", "zh-Hant", "zh-TW", "en", "ja", "ko"])
+
+    def score(path: Path) -> tuple[int, str]:
+        lang = infer_subtitle_language(path)
+        for index, priority in enumerate(priorities):
+            if priority and lang.lower().startswith(priority.lower()):
+                return (100 - index, path.name)
+        return (0, path.name)
+
+    return sorted(candidates, key=score, reverse=True)[0]
+
+
+def infer_subtitle_language(path: Path) -> str:
+    stem = path.stem
+    if "." not in stem:
+        return ""
+    return stem.rsplit(".", 1)[1]
+
+
+def strip_subtitle_suffix(path: Path) -> str:
+    stem = path.stem
+    if "." in stem:
+        stem = stem.rsplit(".", 1)[0]
+    return safe_name(stem)
+
+
+def parse_vtt(path: Path) -> list[Cue]:
+    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    cues: list[Cue] = []
+    current_start: float | None = None
+    current_end: float | None = None
+    current_lines: list[str] = []
+
+    def flush() -> None:
+        nonlocal current_start, current_end, current_lines
+        if current_start is not None and current_end is not None and current_lines:
+            cue_text = clean_subtitle_text(" ".join(current_lines))
+            if cue_text:
+                cues.append(Cue(current_start, max(current_end, current_start + 0.25), cue_text))
+        current_start = None
+        current_end = None
+        current_lines = []
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            flush()
+            continue
+        if line == "WEBVTT" or line.startswith(("NOTE", "STYLE", "REGION", "Kind:", "Language:")):
+            continue
+        match = re.match(r"(?P<start>\d{2}:\d{2}(?::\d{2})?[\.,]\d{3})\s+-->\s+(?P<end>\d{2}:\d{2}(?::\d{2})?[\.,]\d{3})", line)
+        if match:
+            flush()
+            current_start = parse_subtitle_time(match.group("start"))
+            current_end = parse_subtitle_time(match.group("end"))
+            continue
+        if current_start is None:
+            continue
+        current_lines.append(line)
+    flush()
+    return dedupe_adjacent_cues(cues)
+
+
+def parse_subtitle_time(value: str) -> float:
+    normalized = value.replace(",", ".")
+    parts = normalized.split(":")
+    if len(parts) == 3:
+        hours = int(parts[0])
+        minutes = int(parts[1])
+        seconds = float(parts[2])
+    elif len(parts) == 2:
+        hours = 0
+        minutes = int(parts[0])
+        seconds = float(parts[1])
+    else:
+        raise ValueError(f"Invalid subtitle timestamp: {value}")
+    return hours * 3600 + minutes * 60 + seconds
+
+
+def clean_subtitle_text(text: str) -> str:
+    text = re.sub(r"<\d{2}:\d{2}(?::\d{2})?[\.,]\d{3}>", " ", text)
+    text = re.sub(r"</?[^>]+>", " ", text)
+    text = unescape(text)
+    return clean_text(text)
+
+
+def dedupe_adjacent_cues(cues: list[Cue]) -> list[Cue]:
+    deduped: list[Cue] = []
+    previous_text = ""
+    for cue in cues:
+        normalized = cue.text.casefold()
+        if normalized == previous_text:
+            continue
+        deduped.append(cue)
+        previous_text = normalized
+    return deduped
 
 
 def separate_source(source: Path, output_dir: Path, args: argparse.Namespace) -> Path:
@@ -447,6 +638,7 @@ def render_lrc(cues: list[Cue]) -> str:
 
 def render_txt(cues: list[Cue], metadata: dict) -> str:
     lines = [
+        f"source: {metadata.get('source', 'local-transcription')}",
         f"model: {metadata.get('model')}",
         f"language: {metadata.get('language')} ({metadata.get('language_probability')})",
         "",
@@ -487,7 +679,11 @@ def timestamp(seconds: float, comma: bool, hours: bool) -> str:
 
 
 def safe_stem(path: Path) -> str:
-    stem = re.sub(r"[\\/:*?\"<>|]+", "_", path.stem).strip()
+    return safe_name(path.stem)
+
+
+def safe_name(value: str) -> str:
+    stem = re.sub(r"[\\/:*?\"<>|]+", "_", value).strip()
     return stem or "subtitles"
 
 

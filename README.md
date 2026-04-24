@@ -51,6 +51,20 @@ audio-subtitles "/path/to/video.mp4"
 audio-subtitles "https://www.youtube.com/watch?v=..."
 ```
 
+For YouTube URLs, the default is to use YouTube subtitles or auto-subtitles first. Local Whisper only runs for URLs when you ask for it:
+
+```bash
+audio-subtitles --subtitle-source local "https://www.youtube.com/watch?v=..."
+audio-subtitles --local-fallback "https://www.youtube.com/watch?v=..."
+```
+
+Useful subtitle controls:
+
+```bash
+audio-subtitles --sub-langs "zh.*,en.*" "https://www.youtube.com/watch?v=..."
+audio-subtitles --keep-platform-subs "https://www.youtube.com/watch?v=..."
+```
+
 Default outputs:
 
 - `.lrc` for synced lyrics.

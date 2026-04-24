@@ -17,11 +17,11 @@ Default behavior:
 
 - Accept audio files such as `.wav`, `.mp3`, `.m4a`, `.flac`, `.aac`, `.ogg`, `.opus`, `.aiff`.
 - Accept video files such as `.mp4`, `.mov`, `.mkv`, `.webm`, `.avi`, `.m4v`; extract audio with `ffmpeg`.
-- Accept YouTube/media URLs; download audio with `yt-dlp` before transcription.
+- Accept YouTube/media URLs; use platform subtitles first with `yt-dlp` before any local model work.
 - Accept an Ultimate Vocal Remover output folder; prefer files named like `vocals`, `vocal`, `voice`, or `acapella`.
 - Optionally run UVR-style source separation first via `audio-separator`.
 - Output `.srt`, `.vtt`, `.lrc`, `.txt`, and `.json` next to the input unless `--output-dir` is set.
-- Use `faster-whisper` locally when installed.
+- Use `faster-whisper` locally only for local media, `--subtitle-source local`, or URL `--local-fallback`.
 - Keep generated subtitle files separate from audio files; do not overwrite source media.
 
 Install the local transcription dependency when missing:
@@ -56,11 +56,39 @@ Generate subtitles directly from a YouTube URL:
 audio-subtitles "https://www.youtube.com/watch?v=..."
 ```
 
+For YouTube URLs, default behavior is to download available YouTube subtitles or auto-subtitles and convert them to `.srt`, `.vtt`, `.lrc`, `.txt`, and `.json`. This avoids running Whisper when platform captions already exist.
+
+Select subtitle languages:
+
+```bash
+audio-subtitles --sub-langs "zh.*,en.*" "https://www.youtube.com/watch?v=..."
+audio-subtitles --language zh "https://www.youtube.com/watch?v=..."
+```
+
 Use browser cookies if YouTube asks for sign-in:
 
 ```bash
 audio-subtitles --browser chrome "https://www.youtube.com/watch?v=..."
 audio-subtitles --browser safari "https://www.youtube.com/watch?v=..."
+```
+
+Use local Whisper only when explicitly requested:
+
+```bash
+audio-subtitles --subtitle-source local "https://www.youtube.com/watch?v=..."
+audio-subtitles --force-local "https://www.youtube.com/watch?v=..."
+```
+
+Try YouTube subtitles first, then use local Whisper only if none exist:
+
+```bash
+audio-subtitles --local-fallback "https://www.youtube.com/watch?v=..."
+```
+
+Keep raw platform subtitle files:
+
+```bash
+audio-subtitles --keep-platform-subs "https://www.youtube.com/watch?v=..."
 ```
 
 Generate subtitles from a UVR output folder:
@@ -133,6 +161,16 @@ The official Ultimate Vocal Remover GUI is best treated as a manual stem produce
 - `.json`: machine-readable segment timing for later conversion or cleanup.
 
 GarageBand may import audio/MIDI cleanly, but it is not a reliable native subtitle/lyrics-file viewer. Treat the generated `.lrc`/`.srt` as a companion file for a lyrics viewer, video editor, or another music app/plugin that explicitly supports timed lyrics/subtitles.
+
+## YouTube Subtitle Policy
+
+For URL inputs, prefer platform subtitles because they are faster, cheaper, and often good enough:
+
+- `--subtitle-source auto` is the default: try YouTube subtitles first.
+- `--subtitle-source youtube` only uses YouTube subtitles and fails if none are available.
+- `--local-fallback` allows auto mode to run local Whisper when YouTube has no matching subtitles.
+- `--subtitle-source local` or `--force-local` skips YouTube subtitles and runs local Whisper.
+- `--sub-langs` maps directly to `yt-dlp --sub-langs`; default is `all,-live_chat` so the script can choose a useful language file.
 
 ## Model Guidance
 
