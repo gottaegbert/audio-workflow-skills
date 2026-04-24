@@ -9,3 +9,6 @@ This repository contains:
 - A desktop app prototype in [apps/desktop](apps/desktop).
 - CLI helpers for subtitles, lyrics, MP3 download, and vocal separation.
 - Codex skills for repeatable audio workflows.
+
+License: `AGPL-3.0-or-later`. Brand assets and commercial licensing are covered
+in [NOTICE.md](NOTICE.md).

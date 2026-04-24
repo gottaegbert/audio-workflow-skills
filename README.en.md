@@ -187,6 +187,12 @@ Note: the desktop app is currently a CLI shell. After installing the DMG/EXE, fu
 - Only download or process media you have the right to use.
 - Browser cookies are login credentials; do not commit or share them.
 
+## License
+
+Code is licensed under `AGPL-3.0-or-later` from this version forward. Versions already released under MIT remain available under the MIT terms that applied to those releases.
+
+The names `VocalFlow` and `VocalFlow Studio`, plus logos, icons, product marks, and release artwork, are not licensed as part of the source code license. Commercial licensing, proprietary distribution, white-label builds, and enterprise use are available separately from the project owner.
+
 ## More
 
 - Workflow notes: [docs/flow.md](docs/flow.md)
