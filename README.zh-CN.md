@@ -1,8 +1,17 @@
 # VocalFlow Studio
 
-[中文](README.zh-CN.md) | [English](README.en.md)
+中文 | [English](README.md)
 
 VocalFlow Studio 是一个面向唱歌练习、视频字幕和人声分离的桌面工具和 CLI 工具集。它可以处理 YouTube、Bilibili 等 `yt-dlp` 支持的网站链接，也可以处理本地音频、视频和 UVR 人声 stem。
+
+## 下载
+
+最新版本：[v0.1.0](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.0)
+
+- [下载 macOS Apple Silicon 版 (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-mac-arm64.dmg)
+- [下载 Windows x64 版 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-win-x64.exe)
+
+当前桌面 app 仍是 CLI 外壳。完整媒体处理还需要安装下面的运行依赖。
 
 ## 使用场景
 

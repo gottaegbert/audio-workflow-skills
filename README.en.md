@@ -1,8 +1,17 @@
 # VocalFlow Studio
 
-[中文](README.zh-CN.md) | [English](README.en.md)
+English | [中文](README.zh-CN.md)
 
 VocalFlow Studio is a desktop and CLI toolkit for singing practice, video subtitles, and vocal separation. It accepts YouTube, Bilibili, and other `yt-dlp` supported media URLs, plus local audio files, video files, and UVR vocal stems.
+
+## Download
+
+Latest release: [v0.1.0](https://github.com/gottaegbert/audio-workflow-skills/releases/tag/v0.1.0)
+
+- [Download for macOS Apple Silicon (.dmg)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-mac-arm64.dmg)
+- [Download for Windows x64 (.exe)](https://github.com/gottaegbert/audio-workflow-skills/releases/download/v0.1.0/Audio.Workflow-0.1.0-win-x64.exe)
+
+The desktop app is currently a CLI shell. Full media processing still requires the runtime setup below.
 
 ## Use Cases
 
